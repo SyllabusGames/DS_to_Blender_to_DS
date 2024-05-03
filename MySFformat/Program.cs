@@ -52,6 +52,7 @@ namespace MySFformat
 
 		public static string orgFileName = "";
 
+		public static TextBox log;
 
 		public static TextBox flexA;
 		public static TextBox flexB;
@@ -139,6 +140,7 @@ namespace MySFformat
 		[STAThread]
 		static void Main(string[] args)
 		{
+
 			/* Application.EnableVisualStyles();
 			 Application.SetCompatibleTextRenderingDefault(false);
 			 Application.Run(new Form1());*/
@@ -213,65 +215,65 @@ namespace MySFformat
 						Application.Exit();
 					}
 					Form cf = new Form();
-						cf.Size = new System.Drawing.Size(520, 400);
-						cf.Text = "Select the flver file you want to view";
-						cf.FormBorderStyle = FormBorderStyle.FixedDialog;
+					cf.Size = new System.Drawing.Size(520, 400);
+					cf.Text = "Select the flver file you want to view";
+					cf.FormBorderStyle = FormBorderStyle.FixedDialog;
 
-						ListBox lv = new ListBox();
-						lv.Size = new System.Drawing.Size(490, 330);
-						lv.Location = new System.Drawing.Point(10, 10);
-						lv.MultiColumn = false;
+					ListBox lv = new ListBox();
+					lv.Size = new System.Drawing.Size(490, 330);
+					lv.Location = new System.Drawing.Point(10, 10);
+					lv.MultiColumn = false;
 
-						foreach (var bf in bnds.Files)
+					foreach (var bf in bnds.Files)
+					{
+						//  MessageBox.Show("Found:" + bf.Name);
+
+						if (bf.Name.Contains(".flver"))
 						{
-							//  MessageBox.Show("Found:" + bf.Name);
-
-							if (bf.Name.Contains(".flver"))
+							flverFiles.Add(bf);
+							lv.Items.Add(bf.Name);
+						}
+						else if (bf.Name.Length >= 4 && loadTexture)
+						{
+							if (bf.Name.Substring(bf.Name.Length - 4) == ".tpf")
 							{
-								flverFiles.Add(bf);
-								lv.Items.Add(bf.Name);
+								try { targetTPF = TPF.Read(bf.Bytes); } catch (Exception e) { MessageBox.Show("Unsupported tpf file"); }
 							}
-							else if (bf.Name.Length >= 4 && loadTexture)
-							{
-								if (bf.Name.Substring(bf.Name.Length - 4) == ".tpf")
-								{
-									try { targetTPF = TPF.Read(bf.Bytes); } catch (Exception e) { MessageBox.Show("Unsupported tpf file"); }
-								}
-							}
-
 						}
 
-						Button select = new Button();
-						select.Text = "Select";
-						select.Size = new System.Drawing.Size(490, 20);
-						select.Location = new System.Drawing.Point(10, 340);
-						select.Click += (s, e) =>
-						{
-							if (lv.SelectedIndices.Count == 0) { return; }
-							b = FLVER.Read(flverFiles[lv.SelectedIndices[0]].Bytes);
-							fname = fname + "." + FindFileName(flverFiles[0].Name) + ".flver";
-							flverName = fname;
-							cf.Close();
-						};
-						cf.Controls.Add(lv);
-						cf.Controls.Add(select);
+					}
 
-						if (flverFiles.Count == 0)
-						{
-							MessageBox.Show("No FLVER files found!");
+					Button select = new Button();
+					select.Text = "Select";
+					select.Size = new System.Drawing.Size(490, 20);
+					select.Location = new System.Drawing.Point(10, 340);
+					select.Click += (s, e) =>
+					{
+						if (lv.SelectedIndices.Count == 0) { return; }
+						b = FLVER.Read(flverFiles[lv.SelectedIndices[0]].Bytes);
+						fname = fname + "." + FindFileName(flverFiles[0].Name) + ".flver";
+						flverName = fname;
+						cf.Close();
+					};
+					cf.Controls.Add(lv);
+					cf.Controls.Add(select);
 
-							return;
-						}
-						else if (flverFiles.Count == 1)
-						{
-							b = FLVER.Read(flverFiles[0].Bytes);
-							fname = fname + "." + FindFileName(flverFiles[0].Name) + ".flver";
-							flverName = fname;
-						}
-						else
-						{
-							cf.ShowDialog();
-						}
+					if (flverFiles.Count == 0)
+					{
+						MessageBox.Show("No FLVER files found!");
+
+						return;
+					}
+					else if (flverFiles.Count == 1)
+					{
+						b = FLVER.Read(flverFiles[0].Bytes);
+						fname = fname + "." + FindFileName(flverFiles[0].Name) + ".flver";
+						flverName = fname;
+					}
+					else
+					{
+						cf.ShowDialog();
+					}
 
 				  
 				   
@@ -310,9 +312,9 @@ namespace MySFformat
 
 	   
 
-			Form f = new Form();
-			f.Icon = System.Drawing.Icon.ExtractAssociatedIcon(Application.ExecutablePath);
-			f.Text = "FLVER Bones - " + fname;
+			Form mainForm = new Form();
+			mainForm.Icon = System.Drawing.Icon.ExtractAssociatedIcon(Application.ExecutablePath);
+			mainForm.Text = "FLVER Bones - " + fname;
 			Panel p = new Panel();
 			int sizeY = 50;
 			int currentY = 10;
@@ -324,7 +326,7 @@ namespace MySFformat
 			var boneChildList = new List<DataGridViewTextBoxCell>();
 			//p.AutoSize = true;
 			p.AutoScroll = true;
-			f.Controls.Add(p);
+			mainForm.Controls.Add(p);
 
 			//Basic mod disabled
 			/* if (b.Bones.Count > 80)
@@ -498,7 +500,7 @@ namespace MySFformat
 				}
 			}
 
-			f.Size = new System.Drawing.Size(550, 700);
+			mainForm.Size = new System.Drawing.Size(550, 1800);
 			p.Size = new System.Drawing.Size(400, 530);
 
 			p.Controls.Add(dg);
@@ -568,6 +570,16 @@ namespace MySFformat
 				p.Controls.Add(l);
 				currentY += 20;
 			}
+			
+
+			log = new TextBox();
+			log.Multiline = true;
+			log.Size = new System.Drawing.Size(670, 600);
+			log.Location = new System.Drawing.Point(10, currentY + 5);
+			serializedResult = serializer.Serialize(b.Header);
+			log.Text = serializedResult;
+
+			p.Controls.Add(log);
 
 
 			TextBox tbones = new TextBox();
@@ -619,7 +631,7 @@ namespace MySFformat
 			buttonToBlend.Text = "Blender";
 			buttonToBlend.Location = new System.Drawing.Point(450, 130);
 			buttonToBlend.Click += (s, e) => {
-				GLTFToBlend();
+				ImportExport.GLTFToBlend();
 			};
 
 
@@ -938,60 +950,56 @@ namespace MySFformat
 "<实验性质>到出场景至DAE模型文件。", button10);
 			button10.Location = new System.Drawing.Point(435, 600);
 			button10.Click += (s, e) => {
-
-				OpenDAEExportDialogue();
-
+				ImportExport.OpenDAEExportDialogue(targetFlver);
 			};
 
 			Label thanks = new Label();
 			thanks.Text = "FLVER Editor " + version + " Author: Forsakensilver(遗忘的银灵) Special thanks: TKGP & Katalash ";
-			thanks.Location = new System.Drawing.Point(10, f.Size.Height - 60);
+			thanks.Location = new System.Drawing.Point(10, mainForm.Size.Height - 60);
 			thanks.Size = new System.Drawing.Size(700, 50);
 
-			f.Resize += (s, e) =>
+			mainForm.Resize += (s, e) =>
 			{
-				p.Size = new System.Drawing.Size(f.Size.Width - 150, f.Size.Height - 70);
-				button.Location = new System.Drawing.Point(f.Size.Width - 115, 50);
-				button2.Location = new System.Drawing.Point(f.Size.Width - 115, 100);
-				button3.Location = new System.Drawing.Point(f.Size.Width - 115, 150);
-				buttonToBlend.Location = new System.Drawing.Point(f.Size.Width - 115, 175);
-				button4.Location = new System.Drawing.Point(f.Size.Width - 115, 200);
-				button_dummy.Location = new System.Drawing.Point(f.Size.Width - 115, 250);
-				button5.Location = new System.Drawing.Point(f.Size.Width - 115, 300);
-				button6.Location = new System.Drawing.Point(f.Size.Width - 115, 350);
-				button6ex.Location = new System.Drawing.Point(f.Size.Width - 115, 400);
+				p.Size = new System.Drawing.Size(mainForm.Size.Width - 150, mainForm.Size.Height - 70);
+				button.Location = new System.Drawing.Point(mainForm.Size.Width - 115, 50);
+				button2.Location = new System.Drawing.Point(mainForm.Size.Width - 115, 100);
+				button3.Location = new System.Drawing.Point(mainForm.Size.Width - 115, 150);
+				buttonToBlend.Location = new System.Drawing.Point(mainForm.Size.Width - 115, 175);
+				button4.Location = new System.Drawing.Point(mainForm.Size.Width - 115, 200);
+				button_dummy.Location = new System.Drawing.Point(mainForm.Size.Width - 115, 250);
+				button5.Location = new System.Drawing.Point(mainForm.Size.Width - 115, 300);
+				button6.Location = new System.Drawing.Point(mainForm.Size.Width - 115, 350);
+				button6ex.Location = new System.Drawing.Point(mainForm.Size.Width - 115, 400);
 
-				button7.Location = new System.Drawing.Point(f.Size.Width - 115, 450);
-				button8.Location = new System.Drawing.Point(f.Size.Width - 115, 500);
-				button9.Location = new System.Drawing.Point(f.Size.Width - 115, 550);
-				button10.Location = new System.Drawing.Point(f.Size.Width - 115, 600);
+				button7.Location = new System.Drawing.Point(mainForm.Size.Width - 115, 450);
+				button8.Location = new System.Drawing.Point(mainForm.Size.Width - 115, 500);
+				button9.Location = new System.Drawing.Point(mainForm.Size.Width - 115, 550);
+				button10.Location = new System.Drawing.Point(mainForm.Size.Width - 115, 600);
 
-				thanks.Location = new System.Drawing.Point(10, f.Size.Height - 60);
-				dg.Size = new System.Drawing.Size(f.Size.Width - 200, 450);
+				thanks.Location = new System.Drawing.Point(10, mainForm.Size.Height - 60);
+				dg.Size = new System.Drawing.Size(mainForm.Size.Width - 200, 450);
 			};
-			p.Size = new System.Drawing.Size(f.Size.Width - 150, f.Size.Height - 70);
+			p.Size = new System.Drawing.Size(mainForm.Size.Width - 150, mainForm.Size.Height - 70);
 
 			if (basicMode == false)
-				f.Controls.Add(button);
+				mainForm.Controls.Add(button);
 
-			f.Controls.Add(button2);
-			f.Controls.Add(button3);
-			f.Controls.Add(buttonToBlend);
-			f.Controls.Add(button4);
-			f.Controls.Add(button_dummy);
-			f.Controls.Add(button5);
-			f.Controls.Add(button6);
-			f.Controls.Add(button6ex);
-			f.Controls.Add(button7);
-			f.Controls.Add(button8);
-			f.Controls.Add(button9);
+			mainForm.Controls.Add(button2);
+			mainForm.Controls.Add(button3);
+			mainForm.Controls.Add(buttonToBlend);
+			mainForm.Controls.Add(button4);
+			mainForm.Controls.Add(button_dummy);
+			mainForm.Controls.Add(button5);
+			mainForm.Controls.Add(button6);
+			mainForm.Controls.Add(button6ex);
+			mainForm.Controls.Add(button7);
+			mainForm.Controls.Add(button8);
+			mainForm.Controls.Add(button9);
 
-			f.Controls.Add(thanks);
-			f.Controls.Add(button10);
-			f.BringToFront();
-			f.WindowState = FormWindowState.Normal;
-
-
+			mainForm.Controls.Add(thanks);
+			mainForm.Controls.Add(button10);
+			mainForm.BringToFront();
+			mainForm.WindowState = FormWindowState.Normal;
 
 
 
@@ -1001,12 +1009,14 @@ namespace MySFformat
 
 
 
-			ExportModel("C:/Users/nsrul/Desktop/DS To Blender/exported" , FileTypes.gltf2);
+
+
+			ImportExport.ExportModel(targetFlver , "C:/Users/nsrul/Desktop/DS To Blender/exported" , FileTypes.gltf2);
 			
-			GLTFToBlend();
+			ImportExport.GLTFToBlend();
 
 
-			Application.Run(f);
+			Application.Run(mainForm);
 
 
 			//ModelMaterial();
@@ -1048,64 +1058,6 @@ namespace MySFformat
 
 
 
-		static void GLTFToBlend(){
-			// Specify the paths to Blender and your Python script
-			string blenderPath = @"C:/Program Files/Blender 3.0/blender.exe";
-			string pythonScriptPath = @"C:/Users/nsrul/Desktop/DS To Blender/saveBlend.py";
-			string blendFilePath = @"C:/Users/nsrul/Desktop/DS To Blender/empty.blend";
-
-			// Command to launch Blender in background mode
-		//	string launchBlenderCommand = $"--background";
-			string launchBlenderCommand = $"C:/Users/nsrul/Desktop/DS To Blender/empty.blend";
-		//	string launchBlenderCommand = $"--background C:/Users/nsrul/Desktop/DS To Blender/empty.blend";
-
-			// Command to run the Python script within Blender
-		//	string runScriptCommand = $"--background --python \"{pythonScriptPath}\"";
-			string runScriptCommand = $"--python \"{pythonScriptPath}\"";
-
-			// Command to close Blender gracefully
-			string closeBlenderCommand = $"--exit-code 1";
-
-			try
-			{
-			//	Process.Start(blenderPath, $"\"{blendFilePath}\"").WaitForExit();//		This works
-				Process blender = Process.Start(blenderPath, $"--background \"{blendFilePath}\" --python \"{pythonScriptPath}\" {closeBlenderCommand}");
-			//	SendKeys.SendWait("^v");
-				blender.WaitForExit();
-			//	Process.Start(blenderPath, $"--background \"{blendFilePath}\" --python \"{pythonScriptPath}\"").WaitForExit();
-				/*
-				// Start Blender in background mode
-				Process.Start(blenderPath, launchBlenderCommand).WaitForExit();
-
-				// Run the Python script
-				Process.Start(blenderPath, runScriptCommand).WaitForExit();
-
-				// Close Blender
-				Process.Start(blenderPath, closeBlenderCommand).WaitForExit();
-				*/
-				Console.WriteLine("Blender script execution completed successfully.");
-			}
-			catch (Exception ex)
-			{
-				Console.WriteLine($"Error executing Blender script: {ex.Message}");
-			}
-
-			/*
-			//		THIS WORKS BUT NOT IN THE BACKGROUND
-			string launchBlenderCommand = $"C:/Users/nsrul/Desktop/DS To Blender/empty.blend";
-			string runScriptCommand = $"--python \"{pythonScriptPath}\"";
-			string closeBlenderCommand = $"--exit-code 1";
-
-			try
-			{
-				Process.Start(blenderPath, $"\"{blendFilePath}\" --python \"{pythonScriptPath}\"").WaitForExit();
-				Console.WriteLine("Blender script execution completed successfully.");
-			}
-			catch (Exception ex)
-			{
-				Console.WriteLine($"Error executing Blender script: {ex.Message}");
-			}*/
-		}
 
 		public static void updateVerticesLegacy() 
 		{
@@ -3703,137 +3655,6 @@ namespace MySFformat
 		}
 
 
-		//1.83 New
-		//Experimental
-		public static void OpenDAEExportDialogue()
-		{
-			/*var importer = new AssimpContext();
-			 Scene md = importer.ImportFile("SampleFile.dae", PostProcessSteps.CalculateTangentSpace);// PostProcessPreset.TargetRealTimeMaximumQuality
-
-
-
-			 MessageBox.Show("Meshes count:" + md.Meshes.Count + "Material count:" + md.MaterialCount + "\nRootNode:" + md.RootNode.MeshIndices.Count);
-
-			 string status = "RNode children count " + md.RootNode.ChildCount;
-
-			 foreach (var vc in md.RootNode.Children)
-			 {
-				 status += "\n" + vc.Name + "- mesh count" + vc.MeshCount + "- has children" + vc.HasChildren;
-				 if (vc.MeshCount > 0) { status += "- index:" + vc.MeshIndices[0]; }
-			 }
-
-			 MessageBox.Show(status);*/
-			 
-			var openFileDialog2 = new SaveFileDialog();
-			openFileDialog2.FileName = "Exported.dae";
-			string res = "";
-			if (openFileDialog2.ShowDialog() == DialogResult.OK)
-			{
-				ExportModel(openFileDialog2.FileName , FileTypes.collada);
-			} else {
-				return;
-			}
-		}
-
-		public static void ExportModel(string filePathNoExtension , FileTypes type){
-			try
-			{
-
-				Assimp.Scene scene = new Scene();
-				scene.RootNode = new Node();
-
-
-				//s.Meshes = new List<Mesh>();
-
-
-				/*
-				Assimp.Mesh m = new Mesh("Test triangles",Assimp.PrimitiveType.Triangle);
-				m.Vertices.Add(new Assimp.Vector3D(1,0,0));
-				m.Vertices.Add(new Assimp.Vector3D(0, 1, 0));
-				m.Vertices.Add(new Assimp.Vector3D(0, 0, 1));
-				   
-					
-				m.Normals.Add(new Assimp.Vector3D(0,1,0));
-				m.Normals.Add(new Assimp.Vector3D(0, 1, 0));
-				m.Normals.Add(new Assimp.Vector3D(0, 1, 0));
-				m.Faces.Add(new Face(new int[] { 0,1,2}));
-				m.MaterialIndex = 0;
-				   
-				   
-				s.Meshes.Add(m);
-
-				s.Materials.Add(new Material());
-
-				s.RootNode = new Node();
-
-				Node nbase = new Node();
-				nbase.Name = "MeshName";
-				nbase.MeshIndices.Add(0);
-
-				s.RootNode.Children.Add(nbase);*/
-				  
-				for (int i = 0; i < targetFlver.Materials.Count; i++)
-				{
-					var m = targetFlver.Materials[i];
-
-					var assimpMaterial = new Assimp.Material();
-					assimpMaterial.Name = m.Name;
-					scene.Materials.Add(assimpMaterial);
-				}
-
-				for (int i = 0; i < targetFlver.Meshes.Count; i++)
-				{
-					var m = targetFlver.Meshes[i];
-					Assimp.Mesh meshNew = new Mesh("Mesh_M" + i, Assimp.PrimitiveType.Triangle);
-					foreach (var v in m.Vertices)
-					{
-						meshNew.Vertices.Add(new Assimp.Vector3D(v.Positions[0].X, v.Positions[0].Y, v.Positions[0].Z));
-						meshNew.Normals.Add(new Assimp.Vector3D(v.Normals[0].X, v.Normals[0].Y, v.Normals[0].Z));
-						meshNew.Tangents.Add(new Assimp.Vector3D(v.Tangents[0].X, v.Tangents[0].Y, v.Tangents[0].Z));
-						meshNew.TextureCoordinateChannels[0].Add(new Assimp.Vector3D(v.UVs[0].X,1 - v.UVs[0].Y,0));
-							
-					}
-						
-						
-					foreach (var fs in m.FaceSets)
-					{
-						foreach (var arr in fs.GetFaces())
-						{
-							meshNew.Faces.Add(new Face(new int[] { (int)arr[0], (int)arr[1],(int)arr[2] }));
-						}
-					}
-
-					meshNew.MaterialIndex = m.MaterialIndex;
-					scene.Meshes.Add(meshNew);
-
-
-					Node nbase = new Node();
-					nbase.Name = "M_" + i + "_" + targetFlver.Materials[m.MaterialIndex].Name;
-					nbase.MeshIndices.Add(i);
-
-					scene.RootNode.Children.Add(nbase);
-
-				}
-
-
-				using(AssimpContext exportor = new AssimpContext()){
-					switch(type){
-						case FileTypes.collada:filePathNoExtension += ".dae";break;
-						case FileTypes.gltf2:filePathNoExtension += ".gltf";break;
-						default: filePathNoExtension += "." + type.ToString();break;
-					}
-					exportor.ExportFile(scene, filePathNoExtension, type.ToString());
-					exportor.Dispose();
-				}
-	//			MessageBox.Show("Export successful!", "Info");
-
-			}
-			catch (Exception ex)
-			{
-				MessageBox.Show($"Security error.\n\nError message: {ex.Message}\n\n" +
-				$"Details:\n\n{ex.StackTrace}");
-			}
-		}
 
 
 		//1.73 New
